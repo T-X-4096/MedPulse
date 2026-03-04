@@ -194,14 +194,79 @@ export async function fetchArticleStats(authorId = null) {
   if (authorId) query = query.eq('author_id', authorId);
 
   const { data, error } = await query;
-  if (error) return { total: 0, published: 0, drafts: 0, archived: 0, error };
+  if (error) return { total: 0, published: 0, drafts: 0, error };
 
   const total     = data.length;
   const published = data.filter(a => a.status === 'published').length;
   const drafts    = data.filter(a => a.status === 'draft').length;
-  const archived  = data.filter(a => a.status === 'archived').length;
 
-  return { total, published, drafts, archived, error: null };
+  return { total, published, drafts, error: null };
+}
+
+// ── Likes ────────────────────────────────────────────────────
+
+export async function fetchLikes(articleId) {
+  const { count, error } = await supabase
+    .from('likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('article_id', articleId);
+  return { count: count || 0, error };
+}
+
+export async function fetchUserLike(articleId, userId) {
+  const { data, error } = await supabase
+    .from('likes')
+    .select('id')
+    .eq('article_id', articleId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  return { liked: !!data, error };
+}
+
+export async function toggleLike(articleId, userId) {
+  const { liked } = await fetchUserLike(articleId, userId);
+  if (liked) {
+    await supabase.from('likes').delete()
+      .eq('article_id', articleId).eq('user_id', userId);
+  } else {
+    await supabase.from('likes').insert([{ article_id: articleId, user_id: userId }]);
+  }
+  const { count } = await fetchLikes(articleId);
+  return { liked: !liked, count };
+}
+
+// ── Comments ─────────────────────────────────────────────────
+
+export async function fetchComments(articleId) {
+  const { data, error } = await supabase
+    .from('comments')
+    .select('id, body, user_id, created_at, profiles(display_name)')
+    .eq('article_id', articleId)
+    .order('created_at', { ascending: true });
+
+  const comments = (data || []).map(c => ({
+    ...c,
+    display_name: c.profiles?.display_name || 'Anonymous',
+  }));
+  return { data: comments, error };
+}
+
+export async function addComment(articleId, userId, body) {
+  const { data, error } = await supabase
+    .from('comments')
+    .insert([{ article_id: articleId, user_id: userId, body }])
+    .select()
+    .single();
+  return { data, error };
+}
+
+export async function deleteComment(commentId, userId) {
+  const { error } = await supabase
+    .from('comments')
+    .delete()
+    .eq('id', commentId)
+    .eq('user_id', userId);
+  return { error };
 }
 
 /**

@@ -106,7 +106,6 @@ async function loadOverview() {
   document.getElementById('statTotal').textContent     = stats.total;
   document.getElementById('statPublished').textContent = stats.published;
   document.getElementById('statDrafts').textContent    = stats.drafts;
-  document.getElementById('statArchived').textContent  = stats.archived;
 
   // Recent articles table
   const { data, error } = hasRole(currentRole, 'editor')
@@ -229,7 +228,6 @@ function articleRowHtml(article, showActions) {
   const statusBadge = {
     published: '<span class="badge badge-published">Published</span>',
     draft:     '<span class="badge badge-draft">Draft</span>',
-    archived:  '<span class="badge badge-archived">Archived</span>',
   }[article.status] || `<span class="badge badge-draft">${escHtml(article.status)}</span>`;
 
   return `

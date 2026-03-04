@@ -28,7 +28,7 @@
             <!-- populated by JS -->
           </div>
         </div>
-        <a href="/article.html" class="nav-link" id="navLatest">Latest</a>
+        <a href="/" class="nav-link" id="navLatest">Latest</a>
       </div>
 
       <div class="nav-actions">
@@ -175,14 +175,14 @@
         <div class="footer-col">
           <h4>Standards</h4>
           <ul>
-            <li><a href="#">Editorial Policy</a></li>
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Terms of Use</a></li>
+            <li><a href="/editorial-policy.html">Editorial Policy</a></li>
+            <li><a href="/privacy-policy.html">Privacy Policy</a></li>
+            <li><a href="/terms.html">Terms of Use</a></li>
           </ul>
         </div>
       </div>
       <div class="footer-bottom">
-        <span>© 2025 MedPulse. All rights reserved.</span>
+        <span>© <span id="footerYear">2026</span> MedPulse. All rights reserved.</span>
         <span class="footer-pulse">All systems operational</span>
       </div>
     </div>
@@ -194,7 +194,7 @@
       <div class="modal-header">
         <div class="modal-logo">⚕️</div>
         <h2 id="authModalTitle">Sign In</h2>
-        <p class="modal-subtitle" id="authModalSubtitle">Access your author dashboard</p>
+        <p class="modal-subtitle" id="authModalSubtitle">Access your MedPulse account</p>
       </div>
       <div id="authModalBody">
         <!-- populated by auth.js -->
@@ -207,5 +207,6 @@
 
   <!-- ── Scripts ────────────────────────────────────────── -->
   <script type="module" src="/js/main.js"></script>
+  <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
 </body>
 </html>

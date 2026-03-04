@@ -11,6 +11,12 @@ import {
   fetchPublishedArticles,
   fetchArticleBySlug,
   fetchCategories,
+  fetchLikes,
+  fetchUserLike,
+  toggleLike,
+  fetchComments,
+  addComment,
+  deleteComment,
 } from './api.js';
 import {
   formatDate,
@@ -19,8 +25,10 @@ import {
   sanitizeHtml,
   showEmpty,
   populateCategoriesDropdown,
+  showToast,
 } from './ui.js';
 import { getCategoryLabel, CATEGORIES, PAGE_SIZE } from '../config.js';
+import { getCurrentUser, openAuthModal } from './auth.js';
 
 let currentPage     = 1;
 let currentCategory = null;
@@ -143,7 +151,14 @@ async function loadFromPubMedDirect(grid) {
         const journal = s.fulljournalname || s.source || '';
         const authors = (s.authors || []).slice(0, 2).map(a => a.name).join(', ')
                         + ((s.authors || []).length > 2 ? ' et al.' : '');
-        const pubDate = s.sortpubdate || s.pubdate || '';
+        // Use pubdate (human-readable like "2024 Jan 15") rather than sortpubdate
+        // which PubMed uses "2026/12/30" as a placeholder sentinel for undated articles
+        const rawDate = s.pubdate || s.epubdate || '';
+        let publishedAt = new Date().toISOString();
+        if (rawDate) {
+          const d = new Date(rawDate);
+          if (!isNaN(d.getTime())) publishedAt = d.toISOString();
+        }
         const plain   = `${journal}${authors ? ` · ${authors}` : ''}`;
         const summary = plain.slice(0, 200);
 
@@ -155,7 +170,7 @@ async function loadFromPubMedDirect(grid) {
           category:     cat,
           tags:         [],
           hero_image:   null,
-          published_at: pubDate ? new Date(pubDate.replace(/\//g, '-')).toISOString() : new Date().toISOString(),
+          published_at: publishedAt,
           profiles:     { display_name: authors || 'PubMed' },
           _live:        true,   // flag — not from DB
         });
@@ -365,6 +380,11 @@ export async function initArticlePage() {
   renderArticleHero(article);
   renderArticleBody(article);
   renderArticleSidebar(article);
+
+  // Load likes and comments after main render
+  const user = await getCurrentUser();
+  await initLikes(article.id, user);
+  await initComments(article.id, user);
 }
 
 function renderArticleHero(article) {
@@ -398,18 +418,30 @@ function renderArticleBody(article) {
     <div class="article-content fade-in">${safeHtml}</div>
     <div class="divider" style="margin-top:40px;"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:24px;">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="like-btn" id="likeBtn">
+          <span class="like-heart">🤍</span>
+          <span class="like-count" id="likeCount">—</span>
+        </button>
         ${(article.tags||[]).map(t=>`<a href="/?tag=${encodeURIComponent(t)}" class="tag">${escHtml(t)}</a>`).join('')}
       </div>
       <button class="btn btn-ghost btn-sm" id="shareArticleBtn">🔗 Share</button>
+    </div>
+    <div class="comments-section" id="commentsSection">
+      <h3>💬 Discussion</h3>
+      <div id="commentFormWrap"></div>
+      <div id="commentsList"><div class="comments-empty">Loading comments…</div></div>
     </div>`;
   document.getElementById('shareArticleBtn')?.addEventListener('click', async () => {
     if (navigator.share) { await navigator.share({ title: article.title, url: location.href }); }
     else {
-      const { copyToClipboard, showToast } = await import('./ui.js');
       if (await copyToClipboard(location.href)) showToast('Link copied!', 'success');
     }
   });
+}
+
+async function copyToClipboard(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
 }
 
 function renderArticleSidebar(article) {
@@ -441,6 +473,113 @@ function renderArticleSidebar(article) {
       </div>
     </div>
     <a href="/" class="btn btn-secondary" style="width:100%;justify-content:center;">← Back to All Articles</a>`;
+}
+
+// ── Likes ────────────────────────────────────────────────────
+
+async function initLikes(articleId, user) {
+  const btn   = document.getElementById('likeBtn');
+  const count = document.getElementById('likeCount');
+  if (!btn || !count) return;
+
+  // Fetch current like count + user's status
+  const [{ count: total }, { liked }] = await Promise.all([
+    fetchLikes(articleId),
+    user ? fetchUserLike(articleId, user.id) : Promise.resolve({ liked: false }),
+  ]);
+
+  count.textContent = total || 0;
+  if (liked) {
+    btn.classList.add('liked');
+    btn.querySelector('.like-heart').textContent = '❤️';
+  }
+
+  btn.addEventListener('click', async () => {
+    if (!user) { openAuthModal(); return; }
+    btn.disabled = true;
+    const { liked: nowLiked, count: newCount } = await toggleLike(articleId, user.id);
+    btn.disabled = false;
+    count.textContent = newCount;
+    btn.classList.toggle('liked', nowLiked);
+    btn.querySelector('.like-heart').textContent = nowLiked ? '❤️' : '🤍';
+  });
+}
+
+// ── Comments ─────────────────────────────────────────────────
+
+async function initComments(articleId, user) {
+  renderCommentForm(articleId, user);
+  await loadComments(articleId, user);
+}
+
+function renderCommentForm(articleId, user) {
+  const wrap = document.getElementById('commentFormWrap');
+  if (!wrap) return;
+  if (!user) {
+    wrap.innerHTML = `
+      <div class="comment-login-prompt">
+        💬 <span><a href="#" id="commentLoginLink" style="color:var(--teal);font-weight:600;">Sign in</a>
+        or <a href="#" id="commentRegisterLink" style="color:var(--teal);font-weight:600;">create an account</a>
+        to join the discussion.</span>
+      </div>`;
+    wrap.querySelector('#commentLoginLink')?.addEventListener('click', e => { e.preventDefault(); openAuthModal(); });
+    wrap.querySelector('#commentRegisterLink')?.addEventListener('click', e => { e.preventDefault(); openAuthModal('register'); });
+    return;
+  }
+  wrap.innerHTML = `
+    <div class="comment-form">
+      <div id="commentAlert"></div>
+      <textarea id="commentText" placeholder="Share your thoughts on this research…" maxlength="1000"></textarea>
+      <div class="comment-form-footer">
+        <span class="comment-char-count"><span id="commentChars">0</span>/1000</span>
+        <button class="btn btn-primary btn-sm" id="submitCommentBtn">Post Comment</button>
+      </div>
+    </div>`;
+  const textarea = wrap.querySelector('#commentText');
+  const charsEl  = wrap.querySelector('#commentChars');
+  textarea.addEventListener('input', () => { charsEl.textContent = textarea.value.length; });
+  wrap.querySelector('#submitCommentBtn').addEventListener('click', async () => {
+    const body = textarea.value.trim();
+    if (body.length < 2) return;
+    const btn = wrap.querySelector('#submitCommentBtn');
+    btn.disabled = true; btn.textContent = 'Posting…';
+    const { error } = await addComment(articleId, user.id, body);
+    btn.disabled = false; btn.textContent = 'Post Comment';
+    if (error) { showToast('Could not post comment.', 'error'); return; }
+    textarea.value = ''; charsEl.textContent = '0';
+    showToast('Comment posted!', 'success');
+    await loadComments(articleId, user);
+  });
+}
+
+async function loadComments(articleId, user) {
+  const list = document.getElementById('commentsList');
+  if (!list) return;
+  const { data: comments, error } = await fetchComments(articleId);
+  if (error) { list.innerHTML = '<div class="comments-empty">Could not load comments.</div>'; return; }
+  if (!comments.length) { list.innerHTML = '<div class="comments-empty">No comments yet. Be the first to share your thoughts!</div>'; return; }
+  list.innerHTML = comments.map(c => {
+    const initials = (c.display_name || 'User').slice(0, 2).toUpperCase();
+    const isOwn    = user && c.user_id === user.id;
+    return `
+      <div class="comment-card" data-comment-id="${escHtml(c.id)}">
+        <div class="comment-avatar">${escHtml(initials)}</div>
+        <div class="comment-body">
+          <div class="comment-meta">
+            <span class="comment-author">${escHtml(c.display_name || 'Anonymous')}</span>
+            <span class="comment-date">${formatDate(c.created_at)}</span>
+            ${isOwn ? `<button class="comment-delete-btn" data-del="${escHtml(c.id)}">✕ Delete</button>` : ''}
+          </div>
+          <p class="comment-text">${escHtml(c.body)}</p>
+        </div>
+      </div>`;
+  }).join('');
+  list.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const { error: delErr } = await deleteComment(btn.dataset.del, user.id);
+      if (!delErr) { showToast('Comment deleted.', 'info'); await loadComments(articleId, user); }
+    });
+  });
 }
 
 function renderArticleError(message, showBackBtn = false) {

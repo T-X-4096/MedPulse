@@ -70,19 +70,65 @@ export const PUBMED_API_KEY = '148e07bd8919b686e8eee4c675e5fa3c6709';
 /**
  * Number of articles to fetch per search term per import run.
  */
-export const PUBMED_MAX_RESULTS = 10;
+export const PUBMED_MAX_RESULTS = 100;
 
 /**
  * Search terms used by the auto-importer.
- * These run on every scheduled import cycle.
+ * Covers all 14 MedPulse categories. No date restriction — imports all time.
  * PubMed query syntax: https://pubmed.ncbi.nlm.nih.gov/help/
  */
 export const PUBMED_SEARCH_TERMS = [
-  'clinical trial[pt] AND humans[mh] AND ("last 7 days"[dp])',
-  'randomized controlled trial[pt] AND ("last 7 days"[dp])',
-  'systematic review[pt] AND ("last 7 days"[dp])',
-  'public health AND ("last 7 days"[dp])',
-  'cancer treatment AND clinical trial AND ("last 7 days"[dp])',
+  // ── Broad clinical research
+  'clinical trial[pt] AND humans[mh] AND hasabstract',
+  'randomized controlled trial[pt] AND humans[mh] AND hasabstract',
+  'systematic review[pt] AND humans[mh] AND hasabstract',
+  'meta-analysis[pt] AND humans[mh] AND hasabstract',
+  // ── Cardiology
+  'cardiology[mh] AND hasabstract',
+  'heart failure[mh] AND hasabstract',
+  'coronary artery disease[mh] AND clinical trial[pt] AND hasabstract',
+  // ── Oncology
+  'neoplasms[mh] AND clinical trial[pt] AND hasabstract',
+  'cancer[ti] AND treatment[ti] AND hasabstract',
+  'chemotherapy[ti] AND randomized[ti] AND hasabstract',
+  // ── Neurology
+  'neurology[mh] AND clinical trial[pt] AND hasabstract',
+  'alzheimer disease[mh] AND hasabstract',
+  'stroke[mh] AND treatment[ti] AND hasabstract',
+  // ── Immunology
+  'immunotherapy[mh] AND hasabstract',
+  'autoimmune diseases[mh] AND clinical trial[pt] AND hasabstract',
+  // ── Infectious Disease
+  'communicable diseases[mh] AND clinical trial[pt] AND hasabstract',
+  'vaccine[ti] AND efficacy[ti] AND hasabstract',
+  'antimicrobial resistance[mh] AND hasabstract',
+  // ── Mental Health
+  'mental health[mh] AND clinical trial[pt] AND hasabstract',
+  'depression[mh] AND treatment[ti] AND hasabstract',
+  'anxiety disorders[mh] AND therapy[ti] AND hasabstract',
+  // ── Public Health
+  'public health[mh] AND hasabstract',
+  'epidemiology[mh] AND hasabstract',
+  'preventive medicine[mh] AND hasabstract',
+  // ── Pharmacology
+  'pharmacology[mh] AND clinical trial[pt] AND hasabstract',
+  'drug therapy[mh] AND randomized controlled trial[pt] AND hasabstract',
+  // ── Surgery
+  'surgical procedures, operative[mh] AND clinical trial[pt] AND hasabstract',
+  'minimally invasive surgical procedures[mh] AND hasabstract',
+  // ── Pediatrics
+  'pediatrics[mh] AND clinical trial[pt] AND hasabstract',
+  'child health[mh] AND hasabstract',
+  // ── Geriatrics
+  'geriatrics[mh] AND clinical trial[pt] AND hasabstract',
+  'aging[mh] AND clinical trial[pt] AND hasabstract',
+  // ── Medical Technology / AI
+  'artificial intelligence AND medicine AND hasabstract',
+  'machine learning AND clinical[ti] AND hasabstract',
+  'telemedicine[mh] AND hasabstract',
+  // ── Health Policy
+  'health policy[mh] AND hasabstract',
+  'healthcare reform[mh] AND hasabstract',
 ];
 
 export const PUBMED_CRON_SCHEDULE = '0 */6 * * *';

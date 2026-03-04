@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — MedPulse</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚕️</text></svg>" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <nav class="container nav-inner">
+      <a href="/" class="nav-logo">
+        <div class="nav-logo-mark">M</div>
+        <span class="nav-logo-text">Med<span>Pulse</span></span>
+      </a>
+      <div class="nav-links">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/editorial-policy.html" class="nav-link">Editorial Policy</a>
+        <a href="/privacy-policy.html" class="nav-link active">Privacy Policy</a>
+        <a href="/terms.html" class="nav-link">Terms of Use</a>
+      </div>
+      <div class="nav-actions">
+        <div id="navAuth"></div>
+      </div>
+    </nav>
+  </header>
+
+  <section class="hero" style="padding:60px 0 48px;">
+    <div class="hero-grid-bg"></div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-eyebrow">Standards</div>
+        <h1>Privacy <em>Policy</em></h1>
+        <p class="hero-desc">Last updated: March 2026. We keep it simple — your data stays yours.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="container" style="max-width:780px;padding-top:48px;padding-bottom:80px;">
+    <div style="background:var(--white);border-radius:var(--radius-xl);padding:40px;border:1px solid var(--gray-200);box-shadow:var(--shadow-sm);">
+
+      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">1. What Data We Collect</h2>
+      <p style="color:var(--gray-600);line-height:1.75;margin-bottom:12px;">We collect only what is necessary to operate the platform:</p>
+      <ul style="color:var(--gray-600);line-height:1.9;padding-left:24px;margin-bottom:32px;">
+        <li><strong>Account data:</strong> Email address, display name, and encrypted password hash — when you create an account.</li>
+        <li><strong>User-generated content:</strong> Comments and likes you post on articles are stored with your user ID.</li>
+        <li><strong>Authored articles:</strong> If you are a registered author, your submitted articles are stored in our database.</li>
+        <li><strong>Session data:</strong> A secure JWT authentication token stored in your browser's local storage to keep you logged in.</li>
+      </ul>
+
+      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">2. What We Do Not Collect</h2>
+      <ul style="color:var(--gray-600);line-height:1.9;padding-left:24px;margin-bottom:32px;">
+        <li>We do <strong>not</strong> use cookies for tracking.</li>
+        <li>We do <strong>not</strong> collect browsing history, IP addresses, device fingerprints, or geolocation.</li>
+        <li>We do <strong>not</strong> run advertising networks or third-party trackers.</li>
+        <li>We do <strong>not</strong> sell, rent, or share your personal data with third parties for marketing.</li>
+        <li>We do <strong>not</strong> collect health or medical information about you personally.</li>
+      </ul>
+
+      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">3. How We Use Your Data</h2>
+      <ul style="color:var(--gray-600);line-height:1.9;padding-left:24px;margin-bottom:32px;">
+        <li>To authenticate you when you sign in.</li>
+        <li>To display your display name on comments and authored articles.</li>
+        <li>To associate your likes and comments with your account.</li>
+        <li>To send account-related emails (e.g., email confirmation, password reset) — no marketing emails.</li>
+      </ul>
+
+      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">4. Third-Party Services</h2>
+      <p style="color:var(--gray-600);line-height:1.75;margin-bottom:12px;">MedPulse uses the following third-party infrastructure services:</p>
+      <ul style="color:var(--gray-600);line-height:1.9;padding-left:24px;margin-bottom:32px;">
+        <li><strong>Supabase</strong> (supabase.com): Our database and authentication provider. Your email and hashed password are stored on Supabase's servers. See their privacy policy at supabase.com/privacy.</li>
+        <li><strong>Cloudflare Pages</strong> (cloudflare.com): Our CDN and hosting provider. Cloudflare may log standard web request metadata (IP, user-agent) per their privacy policy at cloudflare.com/privacypolicy/.</li>
+        <li><strong>Google Fonts</strong>: Typography fonts are loaded from Google Fonts CDN. Google may log standard request metadata.</li>
+        <li><strong>NCBI PubMed API</strong>: Article data is fetched from the NIH PubMed API. No user data is sent to NCBI.</li>
+      </ul>
+
+      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">5. Data Retention</h2>
+      <ul style="color:var(--gray-600);line-height:1.9;padding-left:24px;margin-bottom:32px;">
+        <li>Your account data is retained for as long as your account is active.</li>
+        <li>Comments and likes are deleted if you delete the associated article or your account.</li>
+        <li>You may request deletion of your account and all associated data by emailing us.</li>
+      </ul>
+
+      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">6. Your Rights</h2>
+      <p style="color:var(--gray-600);line-height:1.75;margin-bottom:32px;">You have the right to access, correct, export, or delete your personal data at any time. To exercise these rights, sign in to your account or contact us directly. We will respond within 30 days.</p>
+
+      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">7. Security</h2>
+      <p style="color:var(--gray-600);line-height:1.75;margin-bottom:32px;">Passwords are hashed using bcrypt by Supabase Auth and never stored in plain text. Database access is protected by Row Level Security, ensuring users can only access their own data. All data is transmitted over HTTPS.</p>
+
+      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">8. Children</h2>
+      <p style="color:var(--gray-600);line-height:1.75;margin-bottom:32px;">MedPulse is intended for adults (18+). We do not knowingly collect personal data from minors. If you believe a minor has created an account, please contact us and we will delete it promptly.</p>
+
+      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">9. Changes to This Policy</h2>
+      <p style="color:var(--gray-600);line-height:1.75;margin-bottom:0;">We may update this policy occasionally. Material changes will be noted at the top of this page with an updated date. Continued use of MedPulse after a policy update constitutes acceptance of the revised policy.</p>
+
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col footer-brand">
+          <h3>⚕️ MedPulse</h3>
+          <p>Authoritative medical journalism for healthcare professionals, researchers, and informed citizens.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Standards</h4>
+          <ul>
+            <li><a href="/editorial-policy.html">Editorial Policy</a></li>
+            <li><a href="/privacy-policy.html">Privacy Policy</a></li>
+            <li><a href="/terms.html">Terms of Use</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span id="footerYear">2026</span> MedPulse. All rights reserved.</span>
+        <span class="footer-pulse">All systems operational</span>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="/js/main.js"></script>
+  <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
+</body>
+</html>

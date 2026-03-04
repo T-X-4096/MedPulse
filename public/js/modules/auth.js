@@ -32,12 +32,22 @@ export async function getUserRole(userId) {
 }
 
 /**
- * Login with email and password.
- * @param {string} email
- * @param {string} password
- * @returns {Promise<{user: User|null, error: Error|null}>}
+ * Register a new user with email, password, and display name.
  */
-export async function login(email, password) {
+export async function register(email, password, displayName) {
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error || !data?.user) return { user: null, error };
+
+  // Create profile immediately
+  await upsertProfile({
+    id:           data.user.id,
+    display_name: displayName || email.split('@')[0],
+    role:         'reader',
+  });
+  return { user: data.user, error: null };
+}
+
+
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   return { user: data?.user || null, error };
 }
@@ -91,13 +101,14 @@ export function renderNavAuth(user, role = 'public') {
       <button class="btn btn-primary btn-sm" id="openLoginBtn">
         Sign In
       </button>`;
-    document.getElementById('openLoginBtn')?.addEventListener('click', openAuthModal);
+    document.getElementById('openLoginBtn')?.addEventListener('click', () => openAuthModal());
   } else {
     const initials = getInitials(user.email);
+    const isReader = role === 'reader';
     container.innerHTML = `
       <div style="display:flex;align-items:center;gap:10px;">
-        <a href="/dashboard.html" class="btn btn-secondary btn-sm">Dashboard</a>
-        <div class="author-avatar" title="${escHtml(user.email)}" style="width:32px;height:32px;font-size:0.7rem;cursor:pointer;">
+        ${!isReader ? `<a href="/dashboard.html" class="btn btn-secondary btn-sm">Dashboard</a>` : ''}
+        <div class="author-avatar" title="${escHtml(user.email)}" style="width:32px;height:32px;font-size:0.7rem;cursor:pointer;" id="navAvatarBtn">
           ${escHtml(initials)}
         </div>
       </div>`;
@@ -108,14 +119,13 @@ export function renderNavAuth(user, role = 'public') {
 
 let authModalOpen = false;
 
-export function openAuthModal() {
+export function openAuthModal(tab = 'login') {
   const overlay = document.getElementById('authModalOverlay');
   if (!overlay) return;
   overlay.classList.add('open');
   authModalOpen = true;
-  renderLoginForm();
+  renderAuthTabs(tab);
 
-  // Close on backdrop click
   overlay.addEventListener('click', e => {
     if (e.target === overlay) closeAuthModal();
   }, { once: true });
@@ -127,12 +137,36 @@ export function closeAuthModal() {
   authModalOpen = false;
 }
 
-function renderLoginForm() {
+function renderAuthTabs(activeTab = 'login') {
+  const title    = document.getElementById('authModalTitle');
+  const subtitle = document.getElementById('authModalSubtitle');
+  if (title) title.textContent = activeTab === 'login' ? 'Welcome Back' : 'Create Account';
+  if (subtitle) subtitle.textContent = activeTab === 'login'
+    ? 'Sign in to like and comment on articles'
+    : 'Join MedPulse — it\'s free';
+
   const body = document.getElementById('authModalBody');
   if (!body) return;
 
   body.innerHTML = `
+    <div class="auth-tabs">
+      <button class="auth-tab ${activeTab==='login'?'active':''}" id="tabLogin">Sign In</button>
+      <button class="auth-tab ${activeTab==='register'?'active':''}" id="tabRegister">Create Account</button>
+    </div>
     <div id="modalError" style="display:none;" class="alert alert-error" role="alert"></div>
+    <div id="authFormArea"></div>`;
+
+  body.querySelector('#tabLogin').addEventListener('click', () => renderAuthTabs('login'));
+  body.querySelector('#tabRegister').addEventListener('click', () => renderAuthTabs('register'));
+
+  if (activeTab === 'login') renderLoginForm();
+  else renderRegisterForm();
+}
+
+function renderLoginForm() {
+  const area = document.getElementById('authFormArea');
+  if (!area) return;
+  area.innerHTML = `
     <div class="modal-form">
       <div class="form-group">
         <label class="form-label" for="loginEmail">Email Address</label>
@@ -151,30 +185,62 @@ function renderLoginForm() {
       <button class="btn btn-ghost" id="closeModalBtn" style="width:100%;">
         Cancel
       </button>
-    </div>
-  `;
+    </div>`;
 
-  document.getElementById('closeModalBtn')?.addEventListener('click', closeAuthModal);
-  document.getElementById('loginSubmitBtn')?.addEventListener('click', handleLoginSubmit);
+  area.querySelector('#closeModalBtn')?.addEventListener('click', closeAuthModal);
+  area.querySelector('#loginSubmitBtn')?.addEventListener('click', handleLoginSubmit);
+  area.querySelectorAll('input').forEach(input => {
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') handleLoginSubmit(); });
+  });
+}
 
-  // Enter key submits
-  body.querySelectorAll('input').forEach(input => {
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') handleLoginSubmit();
-    });
+function renderRegisterForm() {
+  const area = document.getElementById('authFormArea');
+  if (!area) return;
+  area.innerHTML = `
+    <div class="modal-form">
+      <div class="form-group">
+        <label class="form-label" for="regName">Display Name</label>
+        <input class="form-input" type="text" id="regName"
+          placeholder="Dr. Jane Smith" autocomplete="name" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="regEmail">Email Address</label>
+        <input class="form-input" type="email" id="regEmail"
+          placeholder="you@hospital.org" autocomplete="email" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="regPassword">Password</label>
+        <input class="form-input" type="password" id="regPassword"
+          placeholder="Min. 6 characters" autocomplete="new-password" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="regConfirm">Confirm Password</label>
+        <input class="form-input" type="password" id="regConfirm"
+          placeholder="••••••••" autocomplete="new-password" required />
+      </div>
+      <button class="btn btn-primary" id="registerSubmitBtn" style="width:100%;">
+        Create Account
+      </button>
+      <div class="modal-divider">or</div>
+      <button class="btn btn-ghost" id="closeModalBtn" style="width:100%;">
+        Cancel
+      </button>
+    </div>`;
+
+  area.querySelector('#closeModalBtn')?.addEventListener('click', closeAuthModal);
+  area.querySelector('#registerSubmitBtn')?.addEventListener('click', handleRegisterSubmit);
+  area.querySelectorAll('input').forEach(input => {
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') handleRegisterSubmit(); });
   });
 }
 
 async function handleLoginSubmit() {
   const email    = document.getElementById('loginEmail')?.value?.trim();
   const password = document.getElementById('loginPassword')?.value;
-  const errEl    = document.getElementById('modalError');
   const btn      = document.getElementById('loginSubmitBtn');
 
-  if (!email || !password) {
-    showModalError('Please enter your email and password.');
-    return;
-  }
+  if (!email || !password) { showModalError('Please enter your email and password.'); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Signing in…';
@@ -183,8 +249,7 @@ async function handleLoginSubmit() {
 
   if (error) {
     showModalError(error.message || 'Login failed. Please try again.');
-    btn.disabled = false;
-    btn.textContent = 'Sign In';
+    btn.disabled = false; btn.textContent = 'Sign In';
     return;
   }
 
@@ -192,13 +257,37 @@ async function handleLoginSubmit() {
     await ensureProfile(user);
     closeAuthModal();
     showToast('Signed in successfully!', 'success');
+    window.location.reload();
+  }
+}
 
-    // Redirect to dashboard if on homepage
-    if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
-      window.location.href = '/dashboard.html';
-    } else {
-      window.location.reload();
-    }
+async function handleRegisterSubmit() {
+  const name     = document.getElementById('regName')?.value?.trim();
+  const email    = document.getElementById('regEmail')?.value?.trim();
+  const password = document.getElementById('regPassword')?.value;
+  const confirm  = document.getElementById('regConfirm')?.value;
+  const btn      = document.getElementById('registerSubmitBtn');
+
+  if (!name)                    { showModalError('Please enter your display name.'); return; }
+  if (!email)                   { showModalError('Please enter your email address.'); return; }
+  if (!password || password.length < 6) { showModalError('Password must be at least 6 characters.'); return; }
+  if (password !== confirm)     { showModalError('Passwords do not match.'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Creating account…';
+
+  const { user, error } = await register(email, password, name);
+
+  if (error) {
+    showModalError(error.message || 'Registration failed. Please try again.');
+    btn.disabled = false; btn.textContent = 'Create Account';
+    return;
+  }
+
+  if (user) {
+    closeAuthModal();
+    showToast('Account created! Welcome to MedPulse 🎉', 'success');
+    window.location.reload();
   }
 }
 
