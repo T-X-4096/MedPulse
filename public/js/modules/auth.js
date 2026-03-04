@@ -47,9 +47,13 @@ export async function register(email, password, displayName) {
   return { user: data.user, error: null };
 }
 
-
+/**
+ * Login with email and password.
+ */
+export async function login(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   return { user: data?.user || null, error };
+}
 
 /**
  * Sign out the current user.
