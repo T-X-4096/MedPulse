@@ -225,7 +225,7 @@ function renderFeaturedArticle(article) {
   const target = article._live ? ' target="_blank" rel="noopener"' : '';
 
   container.innerHTML = `
-    <article class="featured-article" data-animate>
+    <article class="featured-article">
       <div class="featured-article-body">
         <div>
           <div class="featured-article-meta">
@@ -248,6 +248,9 @@ function renderFeaturedArticle(article) {
         <div class="featured-article-img-placeholder">🏥</div>
       </div>
     </article>`;
+  // Featured article is always immediately visible — no scroll-trigger needed
+  container.querySelector('.featured-article')?.classList.add('visible');
+}
 }
 
 function hideFeaturedSection() {

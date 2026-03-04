@@ -132,6 +132,16 @@ export function formatDate(dateStr, style = 'long') {
   if (!dateStr) return '—';
   const date = new Date(dateStr);
   if (isNaN(date)) return '—';
+
+  // Sanitize PubMed sentinel dates:
+  // Dec 30 of any year = PubMed's "no date" placeholder
+  // Any year more than 1 year ahead = bogus future date
+  const month = date.getUTCMonth(); // 0-indexed, 11 = December
+  const day   = date.getUTCDate();
+  const year  = date.getUTCFullYear();
+  const currentYear = new Date().getFullYear();
+  if ((month === 11 && day === 30) || year > currentYear + 1) return 'Recent';
+
   return date.toLocaleDateString('en-US', {
     year:  'numeric',
     month: style === 'long' ? 'long' : 'short',

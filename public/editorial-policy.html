@@ -8,22 +8,14 @@
   <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
-
   <header class="site-header">
     <nav class="container nav-inner">
       <a href="/" class="nav-logo">
         <div class="nav-logo-mark">M</div>
         <span class="nav-logo-text">Med<span>Pulse</span></span>
       </a>
-      <div class="nav-links">
-        <a href="/" class="nav-link">Home</a>
-        <a href="/editorial-policy.html" class="nav-link active">Editorial Policy</a>
-        <a href="/privacy-policy.html" class="nav-link">Privacy Policy</a>
-        <a href="/terms.html" class="nav-link">Terms of Use</a>
-      </div>
-      <div class="nav-actions">
-        <div id="navAuth"></div>
-      </div>
+      <div class="nav-links"><a href="/" class="nav-link">Home</a></div>
+      <div class="nav-actions"><div id="navAuth"></div></div>
     </nav>
   </header>
 
@@ -33,66 +25,43 @@
       <div class="hero-content">
         <div class="hero-eyebrow">Standards</div>
         <h1>Editorial <em>Policy</em></h1>
-        <p class="hero-desc">Our commitment to accuracy, independence, and evidence-based medical journalism.</p>
       </div>
     </div>
   </section>
 
-  <div class="container" style="max-width:780px;padding-top:48px;padding-bottom:80px;">
+  <div class="container" style="max-width:720px;padding-top:48px;padding-bottom:80px;">
+    <div style="background:var(--white);border-radius:var(--radius-xl);padding:40px;border:1px solid var(--gray-200);line-height:1.8;color:var(--gray-600);">
 
-    <div style="background:var(--white);border-radius:var(--radius-xl);padding:40px;border:1px solid var(--gray-200);box-shadow:var(--shadow-sm);">
+      <p>MedPulse is a project that pulls medical research from PubMed (the NIH's free public database) and shows it in a readable format. That's the whole thing.</p>
 
-      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:8px;">Our Mission</h2>
-      <p style="color:var(--gray-600);line-height:1.75;margin-bottom:32px;">MedPulse exists to make peer-reviewed medical research accessible, readable, and actionable. We surface content from the NIH PubMed database — the world's most comprehensive biomedical literature repository — and present it without editorialisation, sensationalism, or commercial bias.</p>
+      <h2 style="font-size:1.2rem;color:var(--navy);margin:32px 0 12px;">Where do the articles come from?</h2>
+      <p>Most of what you see here is pulled directly from PubMed using their public API. We don't write these — they're real peer-reviewed papers that already exist. We display the title, abstract, authors, and journal name exactly as they appear in PubMed. We don't change them.</p>
+      <p>Some articles are written by registered authors on this platform directly.</p>
 
-      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">Content Sources</h2>
-      <p style="color:var(--gray-600);line-height:1.75;margin-bottom:12px;">All articles on MedPulse come from one of two sources:</p>
-      <ul style="color:var(--gray-600);line-height:1.9;padding-left:24px;margin-bottom:32px;">
-        <li><strong>PubMed / NCBI:</strong> Articles are sourced directly from the National Institutes of Health Entrez E-utilities API. These are peer-reviewed publications indexed in MEDLINE and PubMed Central. Titles, abstracts, author lists, and journal names are reproduced verbatim from the original metadata.</li>
-        <li><strong>Original authored content:</strong> Articles written by registered MedPulse authors are reviewed before publication. Authors are responsible for the accuracy and integrity of their submissions.</li>
-      </ul>
+      <h2 style="font-size:1.2rem;color:var(--navy);margin:32px 0 12px;">Do we filter or edit the research?</h2>
+      <p>No. Articles appear based on automated searches across medical specialties. We automatically sort them into categories using keyword matching — it works well most of the time but isn't perfect.</p>
 
-      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">What We Do and Do Not Do</h2>
-      <ul style="color:var(--gray-600);line-height:1.9;padding-left:24px;margin-bottom:32px;">
-        <li>We do <strong>not</strong> alter, rewrite, or editorially summarise PubMed abstracts.</li>
-        <li>We do <strong>not</strong> accept paid placement, sponsored articles, or advertiser influence of any kind.</li>
-        <li>We do <strong>not</strong> provide medical advice. Nothing on MedPulse should be interpreted as clinical guidance.</li>
-        <li>We do <strong>not</strong> guarantee that any article represents current medical consensus or supersedes professional clinical judgement.</li>
-        <li>We <strong>do</strong> categorise articles automatically using keyword-based specialty mapping. Miscategorisation may occasionally occur.</li>
-        <li>We <strong>do</strong> link back to the original PubMed record for every imported article.</li>
-      </ul>
+      <h2 style="font-size:1.2rem;color:var(--navy);margin:32px 0 12px;">Is this medical advice?</h2>
+      <p><strong>No.</strong> These are research abstracts, not instructions for your health. Always talk to an actual doctor before making health decisions based on anything you read here.</p>
 
-      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">Corrections Policy</h2>
-      <p style="color:var(--gray-600);line-height:1.75;margin-bottom:32px;">If a factual error is identified in original authored content, we will correct it promptly and note the correction at the bottom of the article. Errors in PubMed metadata are inherited from NCBI and should be reported to the original journal. We do not correct or alter PubMed-sourced content — it is displayed as-is from the source.</p>
+      <h2 style="font-size:1.2rem;color:var(--navy);margin:32px 0 12px;">Ads or sponsors?</h2>
+      <p>None. This is a free project. No ads, no sponsors, no paid placements.</p>
 
-      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">Independence</h2>
-      <p style="color:var(--gray-600);line-height:1.75;margin-bottom:32px;">MedPulse is an independent platform with no pharmaceutical, hospital, insurer, or government affiliation. Editorial decisions about which content to surface are made algorithmically based on PubMed search relevance and recency.</p>
-
-      <h2 style="font-size:1.4rem;color:var(--navy);margin-bottom:16px;">Medical Disclaimer</h2>
-      <p style="color:var(--gray-600);line-height:1.75;margin-bottom:0px;padding:20px;background:var(--bg-light);border-radius:var(--radius-md);border-left:4px solid var(--teal);">The content on MedPulse is for informational and educational purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of a qualified healthcare provider with any questions regarding a medical condition. Never disregard professional medical advice or delay in seeking it because of something you have read on this platform.</p>
+      <h2 style="font-size:1.2rem;color:var(--navy);margin:32px 0 12px;">Something looks wrong?</h2>
+      <p>Wrong category or bad info is usually a bug in the automatic processing. PubMed content can't be "corrected" on our end since it comes from the original journals. Original authored articles can be fixed if there's an actual error.</p>
 
     </div>
   </div>
 
   <footer class="site-footer">
     <div class="container">
-      <div class="footer-grid">
-        <div class="footer-col footer-brand">
-          <h3>⚕️ MedPulse</h3>
-          <p>Authoritative medical journalism for healthcare professionals, researchers, and informed citizens.</p>
-        </div>
-        <div class="footer-col">
-          <h4>Standards</h4>
-          <ul>
-            <li><a href="/editorial-policy.html">Editorial Policy</a></li>
-            <li><a href="/privacy-policy.html">Privacy Policy</a></li>
-            <li><a href="/terms.html">Terms of Use</a></li>
-          </ul>
-        </div>
-      </div>
       <div class="footer-bottom">
         <span>© <span id="footerYear">2026</span> MedPulse. All rights reserved.</span>
-        <span class="footer-pulse">All systems operational</span>
+        <span>
+          <a href="/editorial-policy.html" style="color:var(--gray-400);margin-right:16px;">Editorial Policy</a>
+          <a href="/privacy-policy.html" style="color:var(--gray-400);margin-right:16px;">Privacy Policy</a>
+          <a href="/terms.html" style="color:var(--gray-400);">Terms of Use</a>
+        </span>
       </div>
     </div>
   </footer>

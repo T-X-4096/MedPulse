@@ -51,6 +51,10 @@ export async function initDashboard(user, role) {
     document.getElementById('adminNavSection').style.display = '';
     document.getElementById('allArticlesNav').style.display  = '';
   }
+  // PubMed import is admin-only
+  if (hasRole(role, 'admin')) {
+    document.getElementById('importNav').style.display = '';
+  }
 
   // Wire up panel navigation
   initPanelNav();
@@ -68,7 +72,7 @@ export async function initDashboard(user, role) {
   await loadOverview();
   initArticleForm();
   initProfilePanel(user, profile.data, role);
-  initImportPanel();
+  if (hasRole(role, 'admin')) initImportPanel();
 }
 
 // ── Panel navigation ─────────────────────────────────────────

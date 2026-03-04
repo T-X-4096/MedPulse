@@ -123,8 +123,25 @@ export function renderNavAuth(user, role = 'public') {
 let authModalOpen = false;
 
 export function openAuthModal(tab = 'login') {
+  // Inject modal into DOM if it doesn't exist (for pages other than index.html)
+  if (!document.getElementById('authModalOverlay')) {
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <div class="modal-overlay" id="authModalOverlay">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+          <div class="modal-header">
+            <div class="modal-logo">⚕️</div>
+            <h2 id="authModalTitle">Welcome Back</h2>
+            <p class="modal-subtitle" id="authModalSubtitle">Sign in to your MedPulse account</p>
+          </div>
+          <div id="authModalBody"></div>
+        </div>
+      </div>
+      <div class="toast-container" id="toastContainer" aria-live="polite"></div>`;
+    document.body.appendChild(div);
+  }
+
   const overlay = document.getElementById('authModalOverlay');
-  if (!overlay) return;
   overlay.classList.add('open');
   authModalOpen = true;
   renderAuthTabs(tab);
