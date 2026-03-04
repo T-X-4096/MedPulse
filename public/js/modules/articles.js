@@ -251,7 +251,6 @@ function renderFeaturedArticle(article) {
   // Featured article is always immediately visible — no scroll-trigger needed
   container.querySelector('.featured-article')?.classList.add('visible');
 }
-}
 
 function hideFeaturedSection() {
   const c = document.getElementById('featuredArticle');
