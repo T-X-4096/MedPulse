@@ -1,0 +1,29 @@
+# wrangler.toml — Cloudflare Worker configuration
+# Deploy with: wrangler deploy
+
+name        = "medpulse-pubmed-importer"
+main        = "auto-import-worker.js"
+compatibility_date = "2024-01-01"
+
+# ── Cron Triggers ─────────────────────────────────────────────
+# Runs every 6 hours: 00:00, 06:00, 12:00, 18:00 UTC
+[triggers]
+crons = ["0 */6 * * *"]
+
+# ── Environment Variables ──────────────────────────────────────
+# Set secret values via Wrangler CLI (do NOT put real values here):
+#
+#   wrangler secret put SUPABASE_URL
+#   wrangler secret put SUPABASE_SERVICE_KEY
+#   wrangler secret put IMPORT_AUTHOR_ID
+#   wrangler secret put PUBMED_API_KEY      (optional)
+#   wrangler secret put IMPORT_SECRET       (optional HTTP auth)
+#
+[vars]
+# Non-secret placeholder — override with wrangler secret
+
+[env.production]
+name = "medpulse-pubmed-importer"
+
+[env.staging]
+name = "medpulse-pubmed-importer-staging"

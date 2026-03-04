@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Article — MedPulse</title>
+  <meta name="description" content="" id="metaDesc" />
+  <meta property="og:title" content="" id="ogTitle" />
+  <meta property="og:description" content="" id="ogDesc" />
+  <meta property="og:image" content="" id="ogImage" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚕️</text></svg>" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────── -->
+  <header class="site-header">
+    <nav class="container nav-inner">
+      <a href="/" class="nav-logo">
+        <div class="nav-logo-mark">M</div>
+        <span class="nav-logo-text">Med<span>Pulse</span></span>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="/" class="nav-link">Home</a>
+        <div class="nav-categories nav-link" tabindex="0">
+          Categories ▾
+          <div class="nav-dropdown" id="categoriesDropdown"></div>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <div id="navAuth"></div>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ── Article Hero ───────────────────────────────────── -->
+  <section class="article-hero" id="articleHero">
+    <div class="container">
+      <!-- Loading state -->
+      <div class="article-hero-content" id="articleHeroContent">
+        <div class="skeleton skeleton-text" style="width:120px;margin-bottom:24px;"></div>
+        <div class="skeleton skeleton-title" style="height:56px;margin-bottom:12px;"></div>
+        <div class="skeleton skeleton-title" style="height:56px;width:70%;margin-bottom:24px;"></div>
+        <div class="skeleton skeleton-text" style="width:100%;"></div>
+        <div class="skeleton skeleton-text" style="width:80%;"></div>
+      </div>
+    </div>
+    <div id="articleHeroImgWrap"></div>
+  </section>
+
+  <!-- ── Article Content ────────────────────────────────── -->
+  <div class="container">
+    <div class="article-layout" id="articleLayout">
+      <!-- Main body -->
+      <main class="article-body" id="articleBody">
+        <div class="loading-center">
+          <div class="spinner spinner-lg"></div>
+          <span>Loading article…</span>
+        </div>
+      </main>
+
+      <!-- Sidebar -->
+      <aside class="article-sidebar" id="articleSidebar">
+        <div class="sidebar-card">
+          <div class="skeleton" style="height:80px;margin-bottom:12px;border-radius:8px;"></div>
+          <div class="skeleton skeleton-text" style="width:70%;"></div>
+          <div class="skeleton skeleton-text" style="width:50%;"></div>
+        </div>
+        <div class="sidebar-card">
+          <div class="skeleton skeleton-text" style="width:80px;margin-bottom:16px;"></div>
+          <div class="skeleton skeleton-text" style="width:100%;"></div>
+          <div class="skeleton skeleton-text" style="width:90%;"></div>
+          <div class="skeleton skeleton-text" style="width:80%;"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ── Footer ─────────────────────────────────────────── -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h3>⚕️ MedPulse</h3>
+          <p>Authoritative medical journalism for healthcare professionals, researchers, and informed citizens.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Specialties</h4>
+          <ul>
+            <li><a href="/?category=cardiology">Cardiology</a></li>
+            <li><a href="/?category=oncology">Oncology</a></li>
+            <li><a href="/?category=neurology">Neurology</a></li>
+            <li><a href="/?category=public-health">Public Health</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/dashboard.html">Dashboard</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Standards</h4>
+          <ul>
+            <li><a href="#">Editorial Policy</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2025 MedPulse. All rights reserved.</span>
+        <span class="footer-pulse">All systems operational</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── Auth Modal ─────────────────────────────────────── -->
+  <div class="modal-overlay" id="authModalOverlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+      <div class="modal-header">
+        <div class="modal-logo">⚕️</div>
+        <h2 id="authModalTitle">Sign In</h2>
+        <p class="modal-subtitle" id="authModalSubtitle">Access your author dashboard</p>
+      </div>
+      <div id="authModalBody"></div>
+    </div>
+  </div>
+
+  <!-- ── Toast Container ────────────────────────────────── -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <script type="module" src="/js/article.js"></script>
+</body>
+</html>

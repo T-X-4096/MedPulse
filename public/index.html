@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedPulse — Medical News & Research</title>
+  <meta name="description" content="Stay informed with the latest medical research, clinical news, public health updates, and healthcare innovations." />
+  <meta property="og:title" content="MedPulse — Medical News & Research" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚕️</text></svg>" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────── -->
+  <header class="site-header">
+    <nav class="container nav-inner">
+      <a href="/" class="nav-logo">
+        <div class="nav-logo-mark">M</div>
+        <span class="nav-logo-text">Med<span>Pulse</span></span>
+      </a>
+
+      <div class="nav-links" id="navLinks">
+        <a href="/" class="nav-link active">Home</a>
+        <div class="nav-categories nav-link" tabindex="0">
+          Categories ▾
+          <div class="nav-dropdown" id="categoriesDropdown">
+            <!-- populated by JS -->
+          </div>
+        </div>
+        <a href="/article.html" class="nav-link" id="navLatest">Latest</a>
+      </div>
+
+      <div class="nav-actions">
+        <div id="navAuth">
+          <!-- populated by auth.js -->
+        </div>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ── Hero ───────────────────────────────────────────── -->
+  <section class="hero" id="siteHero">
+    <div class="hero-grid-bg"></div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-eyebrow">Medical Intelligence</div>
+        <h1>Evidence-Based<br /><em>Health Journalism</em></h1>
+        <p class="hero-desc">
+          Rigorous reporting on clinical research, public health policy, and healthcare innovation — written for professionals and the curious alike.
+        </p>
+        <div class="hero-stats" id="heroStats">
+          <div class="hero-stat">
+            <span class="hero-stat-num" id="statArticles">—</span>
+            <span class="hero-stat-label">Published Articles</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-num" id="statCategories">—</span>
+            <span class="hero-stat-label">Specialties</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-num">Daily</span>
+            <span class="hero-stat-label">Updates</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Featured Article ───────────────────────────────── -->
+  <section class="articles-section" style="padding-top:56px;padding-bottom:0;">
+    <div class="container">
+      <div id="featuredArticle">
+        <!-- Loading skeleton -->
+        <div class="featured-article">
+          <div class="featured-article-body">
+            <div>
+              <div class="skeleton skeleton-text" style="width:100px;margin-bottom:20px;"></div>
+              <div class="skeleton skeleton-title" style="width:80%;height:36px;margin-bottom:12px;"></div>
+              <div class="skeleton skeleton-title" style="width:60%;height:36px;margin-bottom:20px;"></div>
+              <div class="skeleton skeleton-text" style="width:100%;"></div>
+              <div class="skeleton skeleton-text" style="width:90%;"></div>
+              <div class="skeleton skeleton-text" style="width:70%;"></div>
+            </div>
+          </div>
+          <div class="featured-article-img skeleton"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Filters Bar ────────────────────────────────────── -->
+  <div class="filters-bar" id="filtersBar" style="display:none;">
+    <div class="filters-inner container" id="filtersInner">
+      <span class="filter-label">Filter:</span>
+      <!-- tag pills populated by JS -->
+    </div>
+  </div>
+
+  <!-- ── Articles Grid ──────────────────────────────────── -->
+  <section class="articles-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span>Latest Research & News</span>
+          Recent Articles
+        </h2>
+        <div id="categoryHeader"></div>
+      </div>
+
+      <div class="articles-grid" id="articlesGrid">
+        <!-- Skeleton cards while loading -->
+        <div class="card article-card">
+          <div class="article-card-img skeleton"></div>
+          <div class="article-card-body">
+            <div class="skeleton skeleton-text" style="width:80px;"></div>
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text" style="width:100%;"></div>
+            <div class="skeleton skeleton-text" style="width:85%;"></div>
+          </div>
+        </div>
+        <div class="card article-card">
+          <div class="article-card-img skeleton"></div>
+          <div class="article-card-body">
+            <div class="skeleton skeleton-text" style="width:80px;"></div>
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text" style="width:100%;"></div>
+            <div class="skeleton skeleton-text" style="width:90%;"></div>
+          </div>
+        </div>
+        <div class="card article-card">
+          <div class="article-card-img skeleton"></div>
+          <div class="article-card-body">
+            <div class="skeleton skeleton-text" style="width:80px;"></div>
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text" style="width:100%;"></div>
+            <div class="skeleton skeleton-text" style="width:75%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination" style="display:none;"></div>
+    </div>
+  </section>
+
+  <!-- ── Footer ─────────────────────────────────────────── -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h3>⚕️ MedPulse</h3>
+          <p>Authoritative medical journalism for healthcare professionals, researchers, and informed citizens. Evidence-based. Rigorous. Accessible.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Specialties</h4>
+          <ul id="footerCategories">
+            <li><a href="/?category=cardiology">Cardiology</a></li>
+            <li><a href="/?category=oncology">Oncology</a></li>
+            <li><a href="/?category=neurology">Neurology</a></li>
+            <li><a href="/?category=public-health">Public Health</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/dashboard.html">Dashboard</a></li>
+            <li><a href="#" id="footerLoginLink">Login</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Standards</h4>
+          <ul>
+            <li><a href="#">Editorial Policy</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Use</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2025 MedPulse. All rights reserved.</span>
+        <span class="footer-pulse">All systems operational</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── Auth Modal ─────────────────────────────────────── -->
+  <div class="modal-overlay" id="authModalOverlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+      <div class="modal-header">
+        <div class="modal-logo">⚕️</div>
+        <h2 id="authModalTitle">Sign In</h2>
+        <p class="modal-subtitle" id="authModalSubtitle">Access your author dashboard</p>
+      </div>
+      <div id="authModalBody">
+        <!-- populated by auth.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast Container ────────────────────────────────── -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- ── Scripts ────────────────────────────────────────── -->
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>
