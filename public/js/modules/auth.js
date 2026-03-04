@@ -50,7 +50,6 @@ export async function register(email, password, displayName) {
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   return { user: data?.user || null, error };
-}
 
 /**
  * Sign out the current user.
