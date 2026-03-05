@@ -808,7 +808,7 @@ async function loadUsers(search = '') {
   wrap.innerHTML = `
     <table class="articles-table">
       <thead><tr>
-        <th>Name</th><th>Role</th><th>Joined</th><th>Action</th>
+        <th>Name</th><th>Role</th><th>Joined</th><th style="text-align:right;">Actions</th>
       </tr></thead>
       <tbody>
         ${users.map(u => `
@@ -820,8 +820,11 @@ async function loadUsers(search = '') {
               </select>
             </td>
             <td style="font-size:0.8rem;color:var(--gray-400);">${formatDate(u.created_at, 'short')}</td>
-            <td>
-              <button class="btn btn-secondary btn-sm" data-save-role="${escHtml(u.id)}">Save</button>
+            <td style="text-align:right;">
+              <div style="display:flex;gap:6px;justify-content:flex-end;">
+                <button class="btn btn-secondary btn-sm" data-save-role="${escHtml(u.id)}">Save</button>
+                <button class="btn btn-danger btn-sm" data-delete-user="${escHtml(u.id)}" data-user-name="${escHtml(u.display_name || 'this user')}">Delete</button>
+              </div>
             </td>
           </tr>`).join('')}
       </tbody>
@@ -838,6 +841,28 @@ async function loadUsers(search = '') {
       btn.disabled = false; btn.textContent = 'Save';
       if (error) showToast('Failed to update role', 'error');
       else showToast('Role updated!', 'success');
+    });
+  });
+
+  wrap.querySelectorAll('[data-delete-user]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const uid      = btn.dataset.deleteUser;
+      const userName = btn.dataset.userName;
+      const confirmed = await showConfirm(
+        `Delete ${userName}?`,
+        `This will permanently delete their profile, comments, and likes. This cannot be undone.`
+      );
+      if (!confirmed) return;
+      btn.disabled = true; btn.textContent = '…';
+      const { error } = await deleteUserAccount(uid);
+      if (error) {
+        btn.disabled = false; btn.textContent = 'Delete';
+        showToast('Failed to delete account: ' + error.message, 'error');
+        return;
+      }
+      showToast(`${userName} deleted.`, 'success');
+      // Remove row
+      btn.closest('tr')?.remove();
     });
   });
 }

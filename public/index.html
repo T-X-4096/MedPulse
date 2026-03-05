@@ -31,6 +31,19 @@
         <a href="/#articles" class="nav-link" id="navLatest">Latest</a>
       </div>
 
+      <div class="nav-search" id="navSearch">
+        <div class="nav-search-bar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="searchInput" class="nav-search-input"
+            placeholder="Search articles…" autocomplete="off" />
+          <button class="nav-search-clear" id="searchClear" style="display:none;" aria-label="Clear search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
       <div class="nav-actions">
         <div id="navAuth">
           <!-- populated by auth.js -->
@@ -69,19 +82,6 @@
       </div>
     </div>
   </section>
-
-  <!-- ── Search Bar ──────────────────────────────────────── -->
-  <div class="search-bar-wrap">
-    <div class="container">
-      <div class="search-bar">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" class="search-input"
-          placeholder="Search articles, specialties, keywords…"
-          autocomplete="off" />
-        <button class="search-clear" id="searchClear" style="display:none;">✕</button>
-      </div>
-    </div>
-  </div>
 
   <!-- ── Featured Article ───────────────────────────────── -->
   <section class="articles-section" style="padding-top:56px;padding-bottom:0;">
