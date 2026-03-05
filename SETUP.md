@@ -1,110 +1,111 @@
-# MedPulse — Complete Setup & Deployment Guide
+# MedPulse — Setup and Deployment Guide
 
 ## Table of Contents
-1. [Prerequisites](#prerequisites)
-2. [Supabase Setup](#supabase-setup)
-3. [Local Development](#local-development)
-4. [Cloudflare Pages Deployment](#cloudflare-pages-deployment)
-5. [Environment Variables](#environment-variables)
-6. [Storage Configuration](#storage-configuration)
-7. [Creating Your First Admin User](#creating-your-first-admin-user)
-8. [Architecture Notes](#architecture-notes)
-9. [Troubleshooting](#troubleshooting)
+
+1. [Prerequisites](#1-prerequisites)
+2. [Supabase Setup](#2-supabase-setup)
+3. [Database Migrations](#3-database-migrations)
+4. [Storage Configuration](#4-storage-configuration)
+5. [Application Configuration](#5-application-configuration)
+6. [Local Development](#6-local-development)
+7. [Cloudflare Pages Deployment](#7-cloudflare-pages-deployment)
+8. [Creating the First Admin Account](#8-creating-the-first-admin-account)
+9. [Cloudflare Worker (Scheduled Import)](#9-cloudflare-worker-scheduled-import)
+10. [Role System](#10-role-system)
+11. [Troubleshooting](#11-troubleshooting)
 
 ---
 
-## Prerequisites
+## 1. Prerequisites
 
 - A Supabase account: https://supabase.com
 - A Cloudflare account: https://cloudflare.com
-- A GitHub or GitLab repository for your code
-- A text editor and browser
+- A GitHub repository for the code
+- A modern browser and a text editor
+
+No Node.js, no build tools, and no npm installs are required to run the frontend.
 
 ---
 
-## Supabase Setup
+## 2. Supabase Setup
 
-### 1. Create Project
+### Create a project
 
-1. Go to https://app.supabase.com → New Project
-2. Name it `medpulse` (or your preference)
+1. Go to https://app.supabase.com and click New Project
+2. Give it a name (e.g. medpulse)
 3. Choose a region close to your audience
-4. Set a strong database password (save it!)
-5. Wait ~2 minutes for provisioning
+4. Set a strong database password and save it
+5. Wait approximately two minutes for provisioning
 
-### 2. Get Your Credentials
+### Get your credentials
 
-In your Supabase project dashboard:
-1. Go to **Settings → API**
-2. Copy:
-   - **Project URL** → e.g., `https://abcdefghij.supabase.co`
-   - **anon public key** → `eyJhbGci...` (long JWT)
-3. ⚠️ **NEVER** use the `service_role` key in frontend code
+1. In the Supabase dashboard, go to Settings > API
+2. Copy the Project URL (e.g. https://abcdefgh.supabase.co)
+3. Copy the anon public key (the long JWT string beginning with eyJ)
 
-### 3. Run SQL Migrations
+Keep these values. You will need them in step 5.
 
-In your Supabase project:
-1. Click **SQL Editor** in the sidebar → **New query**
-2. Paste and run **each file** in order:
+Do not use the service_role key in frontend code. It bypasses all security policies.
 
-```
-sql/001_create_tables.sql    ← Run first
-sql/002_rls_policies.sql     ← Run second
-sql/003_seed_data.sql        ← Run only for testing
-```
+### Enable email authentication
 
-### 4. Enable Email Authentication
-
-1. Go to **Authentication → Providers**
-2. Ensure **Email** is enabled
-3. For development, go to **Authentication → Settings** and disable "Confirm email" 
-   (re-enable in production)
-
-### 5. Configure Email Templates (Production)
-
-In **Authentication → Email Templates**, customise the confirmation and reset templates
-to use your domain and branding.
+1. Go to Authentication > Providers
+2. Confirm that Email is enabled
+3. For local development, go to Authentication > Settings and disable Confirm email so you can sign in immediately
+4. Re-enable email confirmation before going to production
 
 ---
 
-## Storage Configuration
+## 3. Database Migrations
 
-### Create the Storage Bucket
+All migrations are in the `sql/` directory. Run them in order using the Supabase SQL Editor.
 
-1. Go to **Storage** in your Supabase dashboard
-2. Click **New bucket**
-3. Name: `article-images`
-4. Set to **Public** (images need to be publicly accessible)
-5. Click **Save**
+For each file: Supabase Dashboard > SQL Editor > New query > paste the file contents > Run.
 
-### Set Storage Policies
+| File                                    | What it creates                                          |
+|-----------------------------------------|----------------------------------------------------------|
+| 001_create_tables.sql                   | profiles, articles tables, indexes, and triggers         |
+| 002_rls_policies.sql                    | Row Level Security policies for all tables               |
+| 003_seed_data.sql                       | Sample articles for development only, do not run in prod |
+| 004_likes_comments_registration.sql     | likes, comments tables and reader role support           |
+| 005_notifications_search.sql            | notifications table and database triggers for likes/comments |
 
-In your SQL editor, run:
+Run them in this exact order. Each migration depends on the previous one.
+
+---
+
+## 4. Storage Configuration
+
+Article hero images are stored in a Supabase Storage bucket.
+
+### Create the bucket
+
+1. Go to Storage in the Supabase dashboard
+2. Click New bucket
+3. Name: article-images
+4. Set to Public (images must be publicly readable)
+5. Click Save
+
+### Set storage policies
+
+In the SQL Editor, run:
 
 ```sql
--- Allow public read
-CREATE POLICY "Public read article images"
+-- Public read access
+CREATE POLICY "storage_public_read"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'article-images');
 
--- Allow authenticated authors to upload
-CREATE POLICY "Authors can upload images"
+-- Authenticated users can upload
+CREATE POLICY "storage_auth_upload"
   ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'article-images'
     AND auth.role() = 'authenticated'
   );
 
--- Allow owners to update their images
-CREATE POLICY "Owners can update images"
-  ON storage.objects FOR UPDATE
-  USING (
-    bucket_id = 'article-images'
-    AND owner = auth.uid()
-  );
-
--- Allow owners to delete their images
-CREATE POLICY "Owners can delete images"
+-- Owners can delete their own images
+CREATE POLICY "storage_owner_delete"
   ON storage.objects FOR DELETE
   USING (
     bucket_id = 'article-images'
@@ -114,270 +115,213 @@ CREATE POLICY "Owners can delete images"
 
 ---
 
-## Environment Variables
+## 5. Application Configuration
 
-### What You Need
+Open `public/js/config.js` and set your Supabase credentials:
 
-| Variable            | Description                        | Example                             |
-|---------------------|------------------------------------|-------------------------------------|
-| `SUPABASE_URL`      | Your Supabase project URL          | `https://abcdef.supabase.co`        |
-| `SUPABASE_ANON_KEY` | Supabase anonymous/public API key  | `eyJhbGciOiJIUzI1NiIsInR5cCI6...`  |
-
-### How They're Injected
-
-This project uses a **build-time replacement pattern** for Cloudflare Pages.
-
-You have two options:
-
-#### Option A: Cloudflare Pages Build Plugin (Recommended)
-Add a `build` script that replaces placeholder strings in `config.js`:
-
-In your `package.json`:
-```json
-{
-  "scripts": {
-    "build": "node scripts/inject-env.js"
-  }
-}
-```
-
-Create `scripts/inject-env.js`:
 ```javascript
-const fs   = require('fs');
-const path = require('path');
-
-const configPath = path.join(__dirname, '../public/js/config.js');
-let   content    = fs.readFileSync(configPath, 'utf8');
-
-content = content
-  .replace('__SUPABASE_URL__',      process.env.SUPABASE_URL      || '')
-  .replace('__SUPABASE_ANON_KEY__', process.env.SUPABASE_ANON_KEY || '');
-
-fs.writeFileSync(configPath, content);
-console.log('✅ Environment variables injected');
-```
-
-#### Option B: window.__ENV__ via HTML snippet
-Add this to the `<head>` of all HTML files before other scripts:
-```html
-<script>
-  // Populated by Cloudflare Pages at build time via _worker.js
-  window.__ENV__ = {
-    SUPABASE_URL:      "__SUPABASE_URL__",
-    SUPABASE_ANON_KEY: "__SUPABASE_ANON_KEY__"
-  };
-</script>
-```
-
-#### Option C: Direct edit for simple deployments
-Simply replace the placeholder values directly in `public/js/config.js`:
-```javascript
-export const SUPABASE_URL      = 'https://your-project.supabase.co';
+export const SUPABASE_URL      = 'https://your-project-id.supabase.co';
 export const SUPABASE_ANON_KEY = 'your-anon-key-here';
 ```
 
+Other values in config.js you may want to adjust:
+
+| Constant             | Default | Description                                       |
+|----------------------|---------|---------------------------------------------------|
+| PAGE_SIZE            | 12      | Articles per page                                 |
+| STORAGE_BUCKET       | article-images | Supabase Storage bucket name              |
+| PUBMED_API_KEY       | (set)   | NCBI API key for higher rate limits               |
+| PUBMED_MAX_RESULTS   | 100     | Max articles fetched per search term per import   |
+| PUBMED_SEARCH_TERMS  | 37 terms| PubMed queries covering all 14 categories         |
+
+To get a free NCBI API key (increases rate limit from 3 to 10 requests/second):
+https://www.ncbi.nlm.nih.gov/account/
+
 ---
 
-## Local Development
+## 6. Local Development
 
-Since this is a static site, you just need a local HTTP server:
+The frontend is a static site. Any HTTP server will work.
 
-### Using Python (no install required)
-```bash
-cd medical-news-platform/public
+Using Python (no install required):
+```
+cd public
 python3 -m http.server 8080
-# Visit: http://localhost:8080
 ```
 
-### Using Node.js serve
-```bash
+Using Node.js serve:
+```
 npm install -g serve
 serve public -p 8080
 ```
 
-### Using VS Code Live Server
-Install the "Live Server" extension, right-click `index.html` → Open with Live Server.
+Using VS Code: install the Live Server extension, right-click index.html, and select Open with Live Server.
 
-### Edit config.js for local dev
-Temporarily replace the placeholder values with your actual Supabase credentials
-in `public/js/config.js` for local testing. **Don't commit these values.**
+Open http://localhost:8080 in your browser.
 
 ---
 
-## Cloudflare Pages Deployment
+## 7. Cloudflare Pages Deployment
 
-### 1. Push to GitHub
+### Push to GitHub
 
-```bash
-git init
+```
 git add .
-git commit -m "Initial MedPulse setup"
-git remote add origin https://github.com/yourname/medpulse.git
-git push -u origin main
+git commit -m "initial setup"
+git push origin main
 ```
 
-### 2. Create Cloudflare Pages Project
+### Create a Pages project
 
 1. Log into https://dash.cloudflare.com
-2. Go to **Workers & Pages → Pages → Create application**
-3. Click **Connect to Git** and authorise GitHub
+2. Go to Workers and Pages > Pages > Create application
+3. Click Connect to Git and authorise GitHub
 4. Select your repository
-5. Configure:
-   - **Framework preset**: None
-   - **Build command**: *(leave empty for static, or `node scripts/inject-env.js` if using build script)*
-   - **Build output directory**: `public`
-   - **Root directory**: `/` (or `medical-news-platform` if in a subdirectory)
+5. Set the following build settings:
+   - Framework preset: None
+   - Build command: (leave empty)
+   - Build output directory: public
 
-### 3. Set Environment Variables
+### Deploy
 
-In your Cloudflare Pages project:
-1. Go to **Settings → Environment variables**
-2. Add for **Production** (and optionally **Preview**):
+Click Save and Deploy. Cloudflare will assign a .pages.dev subdomain. Every push to the main branch triggers a new deployment automatically.
 
-| Variable name       | Value                            |
-|---------------------|----------------------------------|
-| `SUPABASE_URL`      | `https://xxxx.supabase.co`       |
-| `SUPABASE_ANON_KEY` | `eyJhbGci...` (your anon key)    |
+### Custom domain (optional)
 
-### 4. Deploy
-
-Click **Save and Deploy**. Cloudflare will:
-1. Pull your code from GitHub
-2. Run the build command (if set)
-3. Deploy to their global CDN
-4. Assign a `*.pages.dev` domain
-
-### 5. Custom Domain (Optional)
-
-In Pages project → **Custom domains → Add custom domain**. Follow DNS configuration instructions.
+In the Pages project, go to Custom domains > Add custom domain and follow the DNS instructions.
 
 ---
 
-## Creating Your First Admin User
+## 8. Creating the First Admin Account
 
-### Step 1: Create the user in Supabase Auth
+### Step 1: Create a user via Supabase Auth
 
-1. Go to **Authentication → Users** in your Supabase dashboard
-2. Click **Add user → Create new user**
-3. Enter email and password
-4. Click **Create user**
+1. Go to Authentication > Users in the Supabase dashboard
+2. Click Add user > Create new user
+3. Enter an email address and password
+4. Click Create user
 
-### Step 2: Promote to admin
+### Step 2: Promote the user to admin
 
 In the SQL Editor:
+
 ```sql
--- Replace with the actual UUID from step 1
 UPDATE public.profiles
 SET role = 'admin'
-WHERE id = 'paste-user-uuid-here';
-
--- Verify
-SELECT id, display_name, role FROM public.profiles;
+WHERE id = 'paste-the-user-uuid-here';
 ```
 
-### Step 3: Login
+The user UUID is shown in Authentication > Users next to the user's email.
 
-Navigate to your site, click **Sign In**, and use the credentials you just created.
+### Step 3: Sign in
+
+Go to your site and click Sign In. Use the credentials you created. The Dashboard link will appear in the navigation bar.
 
 ---
 
-## Role System
+## 9. Cloudflare Worker (Scheduled Import)
 
-| Role     | Can view own drafts | Can edit own | Can edit others | Can manage all |
-|----------|--------------------|--------------|-----------------|--------------  |
-| `public` | ✗                  | ✗            | ✗               | ✗              |
-| `author` | ✓                  | ✓            | ✗               | ✗              |
-| `editor` | ✓                  | ✓            | ✓               | ✓              |
-| `admin`  | ✓                  | ✓            | ✓               | ✓              |
+The Cloudflare Worker runs on a cron schedule and automatically imports new PubMed articles into the database every six hours. This is separate from the manual import available in the admin dashboard.
 
-To promote users, update the `role` column in `public.profiles` directly via SQL Editor.
+### Requirements
+
+- Node.js installed locally (for Wrangler CLI)
+- A Cloudflare account with Workers enabled
+
+### Setup
+
+Install Wrangler:
+```
+npm install -g wrangler
+wrangler login
+```
+
+Set the required secrets:
+```
+cd worker
+wrangler secret put SUPABASE_URL
+wrangler secret put SUPABASE_SERVICE_KEY
+wrangler secret put IMPORT_AUTHOR_ID
+wrangler secret put PUBMED_API_KEY
+```
+
+For SUPABASE_SERVICE_KEY: use the service_role key from Supabase Settings > API. This key is safe here because it runs only in the server-side Worker environment, never in the browser.
+
+For IMPORT_AUTHOR_ID: use the UUID of the admin user you created in step 8.
+
+### Deploy the worker
+
+```
+wrangler deploy
+```
+
+The worker runs at 00:00, 06:00, 12:00, and 18:00 UTC daily.
+
+### Cron schedule
+
+The schedule is set in `worker/wrangler.toml`:
+```
+[triggers]
+crons = ["0 */6 * * *"]
+```
+
+Adjust this to any valid cron expression if you want a different frequency.
 
 ---
 
-## Architecture Notes
+## 10. Role System
 
-### Why No Build Step?
+| Role   | Description                                                         |
+|--------|---------------------------------------------------------------------|
+| reader | Can read, like, and comment. Cannot write articles.                 |
+| author | Can write, edit, and delete their own articles.                     |
+| editor | Can edit and delete any article.                                    |
+| admin  | Full access: user management, role changes, PubMed import.          |
 
-This project uses native ES Modules loaded directly in the browser, with Supabase JS
-loaded from jsDelivr CDN. This means:
-- Zero build tooling required
-- No webpack, no vite, no npm install
-- Deploy by copying files — it's that simple
+Self-registered users receive the reader role by default. To promote a user:
 
-### Supabase Client Initialisation
+Option A: Use the Users panel in the admin dashboard.
 
-The Supabase JS v2 client is imported as an ES module from CDN:
-```javascript
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+Option B: Use the SQL Editor:
+```sql
+UPDATE public.profiles
+SET role = 'author'  -- or editor, admin
+WHERE id = 'user-uuid-here';
 ```
 
-### CORS
-
-Supabase automatically allows requests from any origin using the anon key.
-Your Cloudflare Pages domain will work without additional CORS configuration.
-
-### Security
-
-- The `anon` key is safe to expose publicly — it's subject to RLS policies
-- The `service_role` key bypasses RLS and must **never** appear in frontend code
-- All sensitive operations (like role changes) should use a Cloudflare Worker with the service_role key
+Users cannot promote themselves. The RLS policy on profiles prevents a user from updating their own role.
 
 ---
 
-## Troubleshooting
+## 11. Troubleshooting
 
-### Articles not loading
-- Check browser console for CORS or 401 errors
-- Verify `SUPABASE_URL` and `SUPABASE_ANON_KEY` are set correctly in `config.js`
-- Ensure RLS policies were applied (run `002_rls_policies.sql`)
-- Confirm the `articles` table exists and has `status = 'published'` rows
+**Articles are not loading**
+- Open the browser console and look for errors
+- Confirm SUPABASE_URL and SUPABASE_ANON_KEY are correct in config.js
+- Confirm migrations 001 and 002 ran without errors
+- Check that the articles table contains rows with status = 'published'
 
-### Login not working
-- Ensure Email provider is enabled in Supabase Auth settings
-- If "Email confirmation" is on, check the user's email for a confirmation link
-- Check the Supabase Auth logs in Dashboard → Authentication → Logs
+**Sign in is not working**
+- Confirm the Email provider is enabled in Supabase Authentication settings
+- If email confirmation is required, check the inbox for a confirmation email
+- Check Authentication > Logs in Supabase for detailed error messages
 
-### Images not uploading
-- Verify the `article-images` bucket exists and is set to Public
-- Ensure storage policies are applied
-- Check that the user is authenticated when attempting to upload
+**Images are not uploading**
+- Confirm the article-images bucket exists and is set to Public
+- Confirm the storage policies in step 4 were applied
+- The user must be authenticated to upload
 
-### Cloudflare Pages 404 on refresh
-- Ensure `_redirects` file is in your `public` folder
-- Verify build output directory is `public`
+**PubMed import returns no results**
+- NCBI enforces rate limits. Without an API key, the limit is 3 requests per second
+- If imports fail silently, check the browser console for network errors
+- Try a single manual search in the Import panel before running auto-import
 
-### Slug conflicts
-- The slug field has a UNIQUE constraint — duplicate slugs will cause an insert error
-- The dashboard form auto-generates slugs but you should verify uniqueness before publishing
+**Notifications are not appearing**
+- Confirm migration 005 ran successfully
+- The notification triggers fire on likes and comments. Try liking an article authored by another account and check that account's bell
 
----
-
-## File Structure Reference
-
-```
-medical-news-platform/
-├── public/                     ← Cloudflare Pages serves this
-│   ├── index.html              ← Homepage
-│   ├── article.html            ← Single article view
-│   ├── dashboard.html          ← Author dashboard
-│   ├── _redirects              ← Cloudflare routing rules
-│   ├── _headers                ← Security headers
-│   ├── css/
-│   │   └── styles.css          ← All styles (no framework)
-│   └── js/
-│       ├── config.js           ← Supabase config & constants
-│       ├── main.js             ← Homepage entry point
-│       ├── article.js          ← Article page entry point
-│       ├── dashboard-init.js   ← Dashboard entry point + auth guard
-│       └── modules/
-│           ├── api.js          ← All Supabase DB queries
-│           ├── auth.js         ← Auth helpers + nav UI
-│           ├── articles.js     ← Rendering logic
-│           ├── dashboard.js    ← CRUD dashboard logic
-│           ├── storage.js      ← Image upload helpers
-│           └── ui.js           ← Shared UI utilities
-└── sql/
-    ├── 001_create_tables.sql   ← Schema + indexes + triggers
-    ├── 002_rls_policies.sql    ← All RLS policies
-    └── 003_seed_data.sql       ← Test data (dev only)
-```
+**Cloudflare Pages shows a 404 on page refresh**
+- Ensure a `_redirects` file exists in the `public/` directory with the content:
+  ```
+  /* /index.html 200
+  ```
