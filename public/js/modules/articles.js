@@ -17,6 +17,7 @@ import {
   fetchComments,
   addComment,
   deleteComment,
+  searchArticles,
 } from './api.js';
 import {
   formatDate,
@@ -33,12 +34,14 @@ import { getCurrentUser, openAuthModal } from './auth.js';
 let currentPage     = 1;
 let currentCategory = null;
 let currentTag      = null;
+let currentSearch   = null;
 
 export async function initArticlesPage() {
   const params = new URLSearchParams(window.location.search);
   currentCategory = params.get('category') || null;
   currentTag      = params.get('tag')      || null;
   currentPage     = parseInt(params.get('page') || '1', 10);
+  currentSearch   = params.get('q')        || null;
 
   // Categories always come from static config — never wait for DB
   populateCategoriesDropdown(CATEGORIES.map(c => c.value));
@@ -56,6 +59,41 @@ export async function initArticlesPage() {
     }
   }
 
+  // Wire search box
+  const searchInput = document.getElementById('searchInput');
+  const searchClear = document.getElementById('searchClear');
+  if (searchInput) {
+    if (currentSearch) {
+      searchInput.value = currentSearch;
+      if (searchClear) searchClear.style.display = '';
+    }
+    let debounceTimer;
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.trim();
+      if (searchClear) searchClear.style.display = q ? '' : 'none';
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        const url = new URL(window.location.href);
+        if (q) { url.searchParams.set('q', q); } else { url.searchParams.delete('q'); }
+        url.searchParams.delete('page');
+        window.history.replaceState({}, '', url);
+        currentSearch = q || null;
+        currentPage = 1;
+        loadArticles();
+      }, 350);
+    });
+    searchClear?.addEventListener('click', () => {
+      searchInput.value = '';
+      searchClear.style.display = 'none';
+      currentSearch = null;
+      currentPage = 1;
+      const url = new URL(window.location.href);
+      url.searchParams.delete('q');
+      window.history.replaceState({}, '', url);
+      loadArticles();
+    });
+  }
+
   await loadArticles();
 }
 
@@ -64,6 +102,23 @@ async function loadArticles() {
   if (!grid) return;
 
   showSkeletons(grid);
+
+  // Search mode — bypass category/tag filters
+  if (currentSearch) {
+    hideFeaturedSection();
+    const header = document.getElementById('categoryHeader');
+    if (header) header.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="badge badge-teal">🔍 "${escHtml(currentSearch)}"</span>
+      </div>`;
+    const { data, count, error } = await searchArticles(currentSearch, { page: currentPage });
+    if (error) { grid.innerHTML = `<div class="alert alert-error" style="grid-column:1/-1;">Search failed: ${escHtml(error.message)}</div>`; return; }
+    if (!data.length) { showEmpty('articlesGrid', 'No results', `Nothing matched "${escHtml(currentSearch)}". Try different keywords.`, '🔍'); return; }
+    renderArticleCards(data, grid);
+    renderPagination(count);
+    updateHeroStats(count);
+    return;
+  }
 
   // Try DB first
   const { data, count, error } = await fetchPublishedArticles({

@@ -11,6 +11,7 @@ import {
   fetchArticleStats, createArticle,
   updateArticle, deleteArticle,
   fetchProfile, upsertProfile,
+  fetchAllProfiles, updateUserRole, deleteUserAccount,
 } from './api.js';
 import { initUploadZone } from './storage.js';
 import {
@@ -54,6 +55,7 @@ export async function initDashboard(user, role) {
   // PubMed import is admin-only
   if (hasRole(role, 'admin')) {
     document.getElementById('importNav').style.display = '';
+    document.getElementById('usersNav').style.display  = '';
   }
 
   // Wire up panel navigation
@@ -72,7 +74,11 @@ export async function initDashboard(user, role) {
   await loadOverview();
   initArticleForm();
   initProfilePanel(user, profile.data, role);
-  if (hasRole(role, 'admin')) initImportPanel();
+  if (hasRole(role, 'admin')) {
+    initImportPanel();
+    initUsersPanel();
+  }
+  initDeleteAccount(user);
 }
 
 // ── Panel navigation ─────────────────────────────────────────
@@ -769,4 +775,124 @@ async function handleAutoImport() {
     showToast(`Auto-import: ${imported} new article${imported !== 1 ? 's' : ''} published.`, 'success');
     await loadOverview();
   }
+}
+
+// ── Users Panel (admin) ──────────────────────────────────────
+
+async function initUsersPanel() {
+  // Load when panel opens
+  document.querySelector('[data-panel="users"]')?.addEventListener('click', () => {
+    loadUsers('');
+  });
+
+  // Search
+  let debounceTimer;
+  document.getElementById('userSearchInput')?.addEventListener('input', (e) => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => loadUsers(e.target.value.trim()), 300);
+  });
+}
+
+async function loadUsers(search = '') {
+  const wrap = document.getElementById('usersTableWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading-center" style="padding:40px;"><div class="spinner"></div></div>';
+
+  const { data: users, error } = await fetchAllProfiles(search);
+  if (error || !users.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">👥</div><h3>${search ? 'No users matched' : 'No users yet'}</h3></div>`;
+    return;
+  }
+
+  const roleOptions = ['reader', 'author', 'editor', 'admin'];
+  wrap.innerHTML = `
+    <table class="articles-table">
+      <thead><tr>
+        <th>Name</th><th>Role</th><th>Joined</th><th>Action</th>
+      </tr></thead>
+      <tbody>
+        ${users.map(u => `
+          <tr data-uid="${escHtml(u.id)}">
+            <td><strong>${escHtml(u.display_name || '—')}</strong></td>
+            <td>
+              <select class="form-input" style="padding:4px 8px;font-size:0.8rem;width:auto;" data-role-select="${escHtml(u.id)}">
+                ${roleOptions.map(r => `<option value="${r}" ${u.role===r?'selected':''}>${r}</option>`).join('')}
+              </select>
+            </td>
+            <td style="font-size:0.8rem;color:var(--gray-400);">${formatDate(u.created_at, 'short')}</td>
+            <td>
+              <button class="btn btn-secondary btn-sm" data-save-role="${escHtml(u.id)}">Save</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+
+  wrap.querySelectorAll('[data-save-role]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const uid  = btn.dataset.saveRole;
+      const sel  = wrap.querySelector(`[data-role-select="${uid}"]`);
+      const role = sel?.value;
+      if (!role) return;
+      btn.disabled = true; btn.textContent = '…';
+      const { error } = await updateUserRole(uid, role);
+      btn.disabled = false; btn.textContent = 'Save';
+      if (error) showToast('Failed to update role', 'error');
+      else showToast('Role updated!', 'success');
+    });
+  });
+}
+
+// ── Delete Account ───────────────────────────────────────────
+
+function initDeleteAccount(user) {
+  const showBtn   = document.getElementById('showDeleteAccountBtn');
+  const cancelBtn = document.getElementById('cancelDeleteAccountBtn');
+  const confirmBtn= document.getElementById('confirmDeleteAccountBtn');
+  const form      = document.getElementById('deleteAccountForm');
+
+  showBtn?.addEventListener('click', () => {
+    form.style.display = '';
+    showBtn.style.display = 'none';
+  });
+  cancelBtn?.addEventListener('click', () => {
+    form.style.display = 'none';
+    showBtn.style.display = '';
+    document.getElementById('deletePassword').value = '';
+  });
+  confirmBtn?.addEventListener('click', async () => {
+    const password = document.getElementById('deletePassword')?.value;
+    const alerts   = document.getElementById('deleteAccountAlerts');
+    if (!password) {
+      alerts.innerHTML = '<div class="alert alert-error">Please enter your password.</div>';
+      return;
+    }
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Deleting…';
+
+    // Re-authenticate to verify password
+    const { supabase } = await import('./api.js');
+    const { error: signInErr } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password,
+    });
+    if (signInErr) {
+      alerts.innerHTML = '<div class="alert alert-error">Incorrect password. Account not deleted.</div>';
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Delete My Account';
+      return;
+    }
+
+    // Delete profile (triggers cascade)
+    const { error: delErr } = await deleteUserAccount(user.id);
+    if (delErr) {
+      alerts.innerHTML = `<div class="alert alert-error">${escHtml(delErr.message)}</div>`;
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Delete My Account';
+      return;
+    }
+
+    // Sign out and redirect
+    await supabase.auth.signOut();
+    window.location.href = '/?deleted=1';
+  });
 }

@@ -6,7 +6,7 @@
  */
 
 import { supabase } from './api.js';
-import { fetchProfile, upsertProfile } from './api.js';
+import { fetchProfile, upsertProfile, fetchNotifications, fetchUnreadCount, markAllRead, markOneRead } from './api.js';
 import { showToast } from './ui.js';
 
 // ── Session helpers ──────────────────────────────────────────
@@ -101,20 +101,34 @@ export function renderNavAuth(user, role = 'public') {
 
   if (!user) {
     container.innerHTML = `
-      <button class="btn btn-primary btn-sm" id="openLoginBtn">
-        Sign In
-      </button>`;
+      <button class="btn btn-primary btn-sm" id="openLoginBtn">Sign In</button>`;
     document.getElementById('openLoginBtn')?.addEventListener('click', () => openAuthModal());
   } else {
     const initials = getInitials(user.email);
     const isReader = role === 'reader';
     container.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="notif-bell-wrap" id="notifBellWrap">
+          <button class="notif-bell" id="notifBellBtn" aria-label="Notifications">
+            🔔
+            <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+          </button>
+          <div class="notif-dropdown" id="notifDropdown">
+            <div class="notif-header">
+              <span>Notifications</span>
+              <button class="notif-mark-all" id="notifMarkAll">Mark all read</button>
+            </div>
+            <div id="notifList"><div class="notif-empty">Loading…</div></div>
+          </div>
+        </div>
         ${!isReader ? `<a href="/dashboard.html" class="btn btn-secondary btn-sm">Dashboard</a>` : ''}
         <div class="author-avatar" title="${escHtml(user.email)}" style="width:32px;height:32px;font-size:0.7rem;cursor:pointer;" id="navAvatarBtn">
           ${escHtml(initials)}
         </div>
       </div>`;
+
+    // Wire bell
+    initNotifBell(user.id);
   }
 }
 
@@ -350,4 +364,99 @@ export async function requireAuth() {
 export function hasRole(userRole, minRole) {
   const hierarchy = { admin: 4, editor: 3, author: 2, public: 1 };
   return (hierarchy[userRole] || 1) >= (hierarchy[minRole] || 1);
+}
+
+// ── Notification Bell ────────────────────────────────────────
+
+let notifPollInterval = null;
+
+export async function initNotifBell(userId) {
+  await refreshNotifBell(userId);
+
+  // Poll every 30s
+  if (notifPollInterval) clearInterval(notifPollInterval);
+  notifPollInterval = setInterval(() => refreshNotifBell(userId), 30000);
+
+  // Toggle dropdown
+  document.getElementById('notifBellBtn')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const dd = document.getElementById('notifDropdown');
+    const isOpen = dd.classList.contains('open');
+    dd.classList.toggle('open', !isOpen);
+    if (!isOpen) {
+      await loadNotifList(userId);
+    }
+  });
+
+  // Mark all read
+  document.getElementById('notifMarkAll')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    await markAllRead(userId);
+    await refreshNotifBell(userId);
+    await loadNotifList(userId);
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('notifBellWrap')?.contains(e.target)) {
+      document.getElementById('notifDropdown')?.classList.remove('open');
+    }
+  });
+}
+
+async function refreshNotifBell(userId) {
+  const { count } = await fetchUnreadCount(userId);
+  const badge = document.getElementById('notifBadge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count > 9 ? '9+' : count;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+async function loadNotifList(userId) {
+  const list = document.getElementById('notifList');
+  if (!list) return;
+  list.innerHTML = '<div class="notif-empty">Loading…</div>';
+
+  const { data: notifs } = await fetchNotifications(userId, 15);
+
+  if (!notifs.length) {
+    list.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
+    return;
+  }
+
+  list.innerHTML = notifs.map(n => `
+    <div class="notif-item ${n.read ? '' : 'unread'}" data-id="${escHtml(n.id)}">
+      <div class="notif-icon">${n.type === 'like' ? '❤️' : '💬'}</div>
+      <div class="notif-content">
+        <div class="notif-msg">${escHtml(n.message)}</div>
+        <div class="notif-time">${relativeTime(n.created_at)}</div>
+      </div>
+      ${n.article_slug ? `<a href="/article.html?slug=${escHtml(n.article_slug)}" class="notif-link" onclick="this.closest('.notif-item').dataset.read='1'">→</a>` : ''}
+    </div>`).join('');
+
+  // Mark as read when clicking
+  list.querySelectorAll('.notif-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      if (!item.classList.contains('unread')) return;
+      await markOneRead(item.dataset.id);
+      item.classList.remove('unread');
+      await refreshNotifBell(userId);
+    });
+  });
+}
+
+function relativeTime(dateStr) {
+  if (!dateStr) return '';
+  const diff  = Date.now() - new Date(dateStr).getTime();
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days  = Math.floor(diff / 86400000);
+  if (mins < 1)  return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  return `${days}d ago`;
 }

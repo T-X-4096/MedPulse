@@ -60,6 +60,9 @@
       <button class="dash-nav-item" id="importNav" data-panel="import" style="display:none;">
         <span class="dash-nav-icon">🔬</span> PubMed Import
       </button>
+      <button class="dash-nav-item" id="usersNav" data-panel="users" style="display:none;">
+        <span class="dash-nav-icon">👥</span> Users
+      </button>
 
       <div class="dash-nav-section">Account</div>
       <button class="dash-nav-item" data-panel="profile">
@@ -395,6 +398,45 @@
               <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
             </div>
           </form>
+
+          <!-- Delete Account -->
+          <div style="margin-top:40px;padding-top:32px;border-top:2px solid var(--gray-100);">
+            <h4 style="color:#c0392b;margin-bottom:8px;">⚠️ Danger Zone</h4>
+            <p style="font-size:0.875rem;color:var(--gray-400);margin-bottom:16px;">Deleting your account is permanent. Your comments, likes, and articles will be removed.</p>
+            <div id="deleteAccountAlerts"></div>
+            <div id="deleteAccountForm" style="display:none;">
+              <div class="form-group" style="margin-bottom:12px;">
+                <label class="form-label" for="deletePassword">Confirm your password to continue</label>
+                <input class="form-input" type="password" id="deletePassword" placeholder="••••••••" />
+              </div>
+              <div style="display:flex;gap:10px;">
+                <button class="btn btn-danger btn-sm" id="confirmDeleteAccountBtn">Delete My Account</button>
+                <button class="btn btn-ghost btn-sm" id="cancelDeleteAccountBtn">Cancel</button>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="showDeleteAccountBtn" style="color:#c0392b;border-color:#c0392b;">Delete Account</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Users Panel (admin only) ──────────────────── -->
+      <div class="dash-panel" id="panel-users">
+        <div class="dash-header">
+          <div>
+            <h2>Users</h2>
+            <p>Search and manage registered users.</p>
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <div class="search-bar" style="max-width:400px;">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="userSearchInput" class="search-input" placeholder="Search by display name…" />
+          </div>
+        </div>
+        <div id="usersTableWrap">
+          <div class="loading-center" style="padding:40px;">
+            <div class="spinner"></div>
+          </div>
         </div>
       </div>
 

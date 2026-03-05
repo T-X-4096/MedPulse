@@ -296,3 +296,100 @@ export async function isSlugTaken(slug, excludeId = null) {
   const { data } = await query;
   return (data || []).length > 0;
 }
+
+// ── Search ───────────────────────────────────────────────────
+
+/**
+ * Full-text search across title, summary, tags, category.
+ * Uses Supabase ilike (case-insensitive pattern match).
+ */
+export async function searchArticles(query, { page = 1, pageSize = 12 } = {}) {
+  if (!query?.trim()) return { data: [], count: 0, error: null };
+  const q    = query.trim();
+  const from = (page - 1) * pageSize;
+  const to   = from + pageSize - 1;
+
+  const { data, count, error } = await supabase
+    .from('articles')
+    .select(`id, title, slug, summary, category, tags, hero_image, status, published_at,
+             profiles(display_name)`, { count: 'exact' })
+    .eq('status', 'published')
+    .or(`title.ilike.%${q}%,summary.ilike.%${q}%,category.ilike.%${q}%`)
+    .order('published_at', { ascending: false })
+    .range(from, to);
+
+  return { data: data || [], count: count || 0, error };
+}
+
+// ── Notifications ────────────────────────────────────────────
+
+export async function fetchNotifications(userId, limit = 20) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return { data: data || [], error };
+}
+
+export async function fetchUnreadCount(userId) {
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('read', false);
+  return { count: count || 0, error };
+}
+
+export async function markAllRead(userId) {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('user_id', userId)
+    .eq('read', false);
+  return { error };
+}
+
+export async function markOneRead(notifId) {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('id', notifId);
+  return { error };
+}
+
+// ── Admin: user management ───────────────────────────────────
+
+export async function fetchAllProfiles(search = '') {
+  let query = supabase
+    .from('profiles')
+    .select('id, display_name, role, created_at')
+    .order('created_at', { ascending: false });
+  if (search.trim()) {
+    query = query.ilike('display_name', `%${search.trim()}%`);
+  }
+  const { data, error } = await query;
+  return { data: data || [], error };
+}
+
+export async function updateUserRole(userId, role) {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ role })
+    .eq('id', userId);
+  return { error };
+}
+
+// ── Delete account ───────────────────────────────────────────
+
+export async function deleteUserAccount(userId) {
+  // Delete profile (cascades to comments/likes via DB FKs)
+  // Auth user deletion requires server-side (service role) or Supabase UI
+  // We soft-delete by wiping profile data and signing out
+  const { error } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('id', userId);
+  return { error };
+}
